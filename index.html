@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bumerang - Akıllı Öğrenme</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <span class="material-icons-round">all_inclusive</span>
+                <h1>Bumerang</h1>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" onclick="app.navigateTo('dashboard')">
+                    <span class="material-icons-round">dashboard</span>
+                    <span>Panel</span>
+                </li>
+                <li onclick="app.navigateTo('browse')">
+                    <span class="material-icons-round">view_list</span>
+                    <span>Göz At</span>
+                </li>
+                <li onclick="app.showCreateDeckModal()">
+                    <span class="material-icons-round">add_circle</span>
+                    <span>Set Ekle</span>
+                </li>
+                <li onclick="app.navigateTo('settings')"> <!-- Future use -->
+                    <span class="material-icons-round">settings</span>
+                    <span>Ayarlar</span>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="view active">
+                <header class="top-bar">
+                    <h2>Çalışma Setlerim</h2>
+                    <div class="user-profile">
+                        <span>Merhaba, Öğrenci</span>
+                        <div class="avatar">Ö</div>
+                    </div>
+                </header>
+
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <h3>Bugün Çalışılacak</h3>
+                        <p class="stat-number" id="total-due">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Toplam Kart</h3>
+                        <p class="stat-number" id="total-cards">0</p>
+                    </div>
+                    <!-- Future: Streak -->
+                </div>
+
+                <div id="deck-grid" class="deck-grid">
+                    <!-- Decks will be injected here via JS -->
+                    <!-- Example Deck Card
+                    <div class="deck-card">
+                        <h3>İngilizce Kelimeler</h3>
+                        <div class="progress-info">
+                            <span>20 Kart</span>
+                            <span class="due-badge">5 Çalışılacak</span>
+                        </div>
+                        <div class="deck-actions">
+                            <button class="btn primary">Çalış</button>
+                            <button class="btn icon-only"><span class="material-icons-round">edit</span></button>
+                        </div>
+                    </div>
+                    -->
+                </div>
+            </section>
+
+            <!-- Card Editor View -->
+            <section id="view-editor" class="view hidden">
+                <header class="top-bar">
+                    <button class="btn text" onclick="app.navigateTo('dashboard')">
+                        <span class="material-icons-round">arrow_back</span> Geri
+                    </button>
+                    <h2 id="editor-deck-title">Set Düzenle</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn text" id="delete-selected-btn" style="color: #ff7070; display: none;"
+                            onclick="app.deleteSelectedCards()">
+                            <span class="material-icons-round">delete_sweep</span> Seçilenleri Sil
+                        </button>
+                        <button class="btn primary" id="save-card-btn" onclick="app.saveCard()">Kart Ekle</button>
+                    </div>
+                </header>
+
+                <div class="editor-container">
+                    <div class="card-form">
+                        <div class="input-group">
+                            <label>Ön Yüz (Soru)</label>
+                            <textarea id="card-front" placeholder="Kelime veya soru girin..."></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>Arka Yüz (Cevap)</label>
+                            <textarea id="card-back" placeholder="Anlamı veya cevabı girin..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="card-list-preview">
+                        <h3>Kartlar</h3>
+                        <div id="editor-card-list">
+                            <!-- List of existing cards in deck -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Study Mode View -->
+            <section id="view-study" class="view hidden">
+                <header class="study-header">
+                    <button class="btn icon-only" onclick="app.navigateTo('dashboard')">
+                        <span class="material-icons-round">close</span>
+                    </button>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="study-progress"></div>
+                    </div>
+                    <span id="study-count">0/0</span>
+                </header>
+
+                <div class="study-area">
+                    <div class="flashcard-container">
+                        <div class="flashcard" id="active-card" onclick="app.flipCard(event)">
+                            <div class="card-face front">
+                                <div class="content" id="study-front">Yükleniyor...</div>
+                                <div class="hint">Cevabı görmek için tıkla</div>
+                            </div>
+                            <div class="card-face back">
+                                <div class="content" id="study-back">...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls" id="controls-area">
+                        <!-- Buttons appear after flip -->
+                        <div class="rating-buttons hidden" id="rating-buttons">
+                            <button class="rate-btn again" onclick="app.rateCard(1)">
+                                <span>Tekrar</span>
+                                <span class="time-hint">&lt; 1 dk</span>
+                            </button>
+                            <button class="rate-btn hard" onclick="app.rateCard(3)">
+                                <span>Zor</span>
+                                <span class="time-hint">2 gün</span>
+                            </button>
+                            <button class="rate-btn good" onclick="app.rateCard(4)">
+                                <span>İyi</span>
+                                <span class="time-hint">4 gün</span>
+                            </button>
+                            <button class="rate-btn easy" onclick="app.rateCard(5)">
+                                <span>Kolay</span>
+                                <span class="time-hint">7 gün</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Browse (New) -->
+            <div id="view-browse" class="view hidden">
+                <header class="top-bar">
+                    <div class="user-profile">
+                        <h2>Göz At & Düzenle</h2>
+                    </div>
+                </header>
+                <div id="browse-content">
+                    <!-- Dynamic Content: Deck List or Card List -->
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <section id="view-settings" class="view hidden">
+                <header class="top-bar">
+                    <h2>Ayarlar</h2>
+                </header>
+
+                <div class="settings-container">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>Tema Tercihi</h3>
+                            <p>Göz yormayan karanlık mod veya klasik aydınlık mod.</p>
+                        </div>
+                        <button id="theme-toggle-btn" class="btn primary" onclick="app.toggleTheme()">Karanlık
+                            Mod</button>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3>Verileri Sıfırla</h3>
+                            <p>Tüm çalışma setlerini ve ilerlemeleri kalıcı olarak siler.</p>
+                        </div>
+                        <button class="btn icon-only" style="color: #ff7070; border: 1px solid #ff7070;"
+                            onclick="app.resetData()">
+                            <span class="material-icons-round">delete_forever</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-create-deck" class="modal hidden">
+        <div class="modal-content">
+            <h3>Yeni Çalışma Seti</h3>
+            <input type="text" id="new-deck-name" placeholder="Set Adı (örn. İspanyolca Fiiller)">
+            <div class="modal-actions">
+                <button class="btn text" onclick="app.closeModal('modal-create-deck')">İptal</button>
+                <button class="btn primary" onclick="app.createDeck()">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Card -->
+    <div id="modal-add-card" class="modal hidden">
+        <div class="modal-content">
+            <h3>Karta Ekle</h3>
+            <div class="input-group">
+                <label>Ön Yüz (Soru)</label>
+                <textarea id="modal-card-front" style="height: 80px;" placeholder="Soru..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>Arka Yüz (Cevap)</label>
+                <textarea id="modal-card-back" style="height: 80px;" placeholder="Cevap..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn text" onclick="app.closeModal('modal-add-card')">İptal</button>
+                <button class="btn primary" onclick="app.addCardFromModal()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmation -->
+    <div id="modal-confirm" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div style="margin-bottom: 1rem; color: #ff7070;">
+                <span class="material-icons-round" style="font-size: 3rem;">warning</span>
+            </div>
+            <h3 id="confirm-title" style="margin-bottom: 0.5rem;">Emin misiniz?</h3>
+            <p id="confirm-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;">Bu işlem geri alınamaz.
+            </p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button class="btn text" onclick="app.closeModal('modal-confirm')">İptal</button>
+                <button class="btn primary" id="confirm-yes-btn" style="background: #ff7070;">Evet, Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Alert -->
+    <div id="modal-alert" class="modal hidden" style="z-index: 2100;">
+        <div class="modal-content" style="max-width: 350px; text-align: center;">
+            <div style="margin-bottom: 1rem; color: var(--primary);">
+                <span class="material-icons-round" style="font-size: 3rem;">info</span>
+            </div>
+            <p id="alert-message" style="color: var(--text-main); font-weight: 500; margin-bottom: 1.5rem;"></p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button class="btn primary" onclick="app.closeModal('modal-alert')">Tamam</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="srs.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
